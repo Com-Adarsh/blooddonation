@@ -230,9 +230,9 @@ function bindEvents() {
         state.donors = await getDonors();
         state.group = "All"; state.area = areas[0]; state.search = ""; search.value = "";
         document.getElementById("area-filter").value = areas[0];
-        renderDonors(); addActivity("donor", "Donor profile added", String(data.get("group")) + " · " + department);
+        renderDonors(); addActivity("donor", "Donor registration submitted", String(data.get("group")) + " · " + department);
         f.reset(); document.getElementById("register-dialog").close();
-        showToast("Your donor profile is saved. The Cell coordinates connections.");
+        showToast("Registration submitted. The Aashraya coordinator must approve your donor profile before it appears in the directory.");
       } catch (error) { showToast(error.message || "Could not save the donor profile."); }
       return;
     }
