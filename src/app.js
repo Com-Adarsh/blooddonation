@@ -67,6 +67,15 @@ function showToast(message) {
   clearTimeout(showToast.timer);
   showToast.timer = setTimeout(function () { el.classList.remove("toast-visible"); }, 3600);
 }
+function handleAuthRedirectError() {
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  const queryParams = new URLSearchParams(window.location.search);
+  const message = hashParams.get("error_description") || queryParams.get("error_description");
+  if (message) {
+    history.replaceState({}, document.title, window.location.pathname + window.location.search.split("?")[0]);
+    setTimeout(function () { showToast("Authentication failed: " + message); }, 0);
+  }
+}
 function open(id) { document.getElementById(id).showModal(); }
 function render() {
   const chips = ["All"].concat(groups).map(function (g) {
@@ -295,7 +304,7 @@ function bindEvents() {
       const { error } = await signInWithEmail(email);
       if (error) {
         if (error.status === 429 || error.code === "over_email_send_rate_limit" || /security|after .*seconds|rate limit|too many requests/i.test(error.message || "")) {
-          const wait = (error.message || "").match(/after\\s+(\\d+)\\s+seconds/i);
+          const wait = (error.message || "").match(/after\s+(\d+)\s+seconds/i);
           throw new Error(wait ? "For account security, please wait " + wait[1] + " seconds before requesting another sign-in email. Check your inbox and spam folder for the previous link." : "Too many sign-in email requests. Please wait before trying again and check your inbox for the previous link.");
         }
         throw error;
@@ -304,7 +313,7 @@ function bindEvents() {
       showToast("Check your email for the secure sign-in link. Avoid repeated requests.");
     } catch (error) {
       const message = error?.message || "";
-      const wait = message.match(/after (\\d+) seconds?/i);
+      const wait = message.match(/after (\d+) seconds?/i);
       if (wait) {
         showToast("For security reasons, wait " + wait[1] + " seconds before requesting another sign-in email.");
       } else if (error?.status === 429 || error?.code === "over_email_send_rate_limit" || error?.code === "over_request_rate_limit") {
@@ -362,5 +371,6 @@ function bindEvents() {
   });
 }
 render();
+handleAuthRedirectError();
 initializeBackend();
 
