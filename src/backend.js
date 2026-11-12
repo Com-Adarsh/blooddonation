@@ -25,7 +25,7 @@ export async function getAreas() {
 export async function getDonors() {
   const { data, error } = await client().from("student_donors")
     .select("id,display_name,blood_group,department,study_year,campus_area_id,availability,district,campus_areas(name)")
-    .eq("is_active", true).order("display_name");
+    .eq("is_active", true).eq("approval_status", "approved").order("display_name");
   if (error) throw error;
   return data.map((d) => ({ id: d.id, name: d.display_name, group: d.blood_group, department: d.department,
     year: d.study_year, area: d.campus_areas?.name || "Campus", areaId: d.campus_area_id,
