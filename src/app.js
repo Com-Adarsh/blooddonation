@@ -1,4 +1,4 @@
-import { isLiveConfigured, signInWithEmail, signOut, onAuthChange, getAreas, getDonors, registerDonor, addConnectionRequest, addBloodRequest, getMyActivity, isCoordinator, getCoordinatorQueue, getDonorContact, setRequestStatus, deactivateDonor } from "./backend.js";
+import { isLiveConfigured, signInWithEmail, signOut, onAuthChange, getAreas, getDonors, registerDonor, addConnectionRequest, addBloodRequest, getMyActivity, isCoordinator, getCoordinatorQueue, getDonorContact, setRequestStatus, deactivateDonor, setDonorApproval } from "./backend.js";
 const groups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 const districts = ["Thiruvananthapuram","Kollam","Pathanamthitta","Alappuzha","Kottayam","Idukki","Ernakulam","Thrissur","Palakkad","Malappuram","Kozhikode","Wayanad","Kannur","Kasaragod"];
 let areas = ["All campus"];
@@ -132,13 +132,20 @@ async function loadLiveData() {
 async function loadCoordinatorQueue() {
   if (!state.coordinator) throw new Error("Coordinator access is required.");
   const queue = await getCoordinatorQueue(), el = document.getElementById("coordinator-queue");
+  const donorCards = (queue.donorApprovals || []).map((d) =>
+    '<article class="moderation-item"><strong>New donor registration · ' + esc(d.display_name) + '</strong><p>' +
+    esc(d.blood_group) + ' · ' + esc(d.department) + ' · ' + esc(d.study_year) + ' · ' + esc(d.district || "") +
+    ' · ' + esc(d.campus_areas?.name || "") + '</p><p>Registration is pending coordinator approval. Contact details remain private until approved.</p>' +
+    '<div class="moderation-actions"><button class="button button-primary button-small" data-donor-approval="approved" data-donor-id="' + esc(d.id) + '">Approve donor</button>' +
+    '<button class="button button-outline button-small" data-donor-approval="rejected" data-donor-id="' + esc(d.id) + '">Reject</button></div></article>'
+  ).join("");
   const connectionCards = queue.connections.map((r) => {
     const d = r.donor || {};
     const approved = r.status === "accepted";
     return '<article class="moderation-item"><strong>Connection request · ' + esc(d.display_name || "Donor") + '</strong><p>' + esc(r.request_blood_group) + ' · ' + esc(r.urgency) + ' · ' + esc(d.department || "") + ' · ' + esc(d.campus_areas?.name || "") + ' · ' + esc(r.status) + '</p><p>' + esc(r.note || "No note supplied") + '</p>' + (approved ? '<button class="button button-outline button-small" data-contact="' + esc(d.id || "") + '">View donor contact</button><button class="button button-outline button-small" data-deactivate="' + esc(d.id || "") + '">Deactivate donor</button><p id="contact-' + esc(d.id || "") + '" class="contact-result" aria-live="polite"></p><div class="moderation-actions"><button class="button button-primary button-small" data-table="connection_requests" data-id="' + esc(r.id) + '" data-status="closed">Mark fulfilled / close</button></div>' : '<div class="moderation-actions"><button class="button button-primary button-small" data-table="connection_requests" data-id="' + esc(r.id) + '" data-status="accepted">Approve</button><button class="button button-outline button-small" data-table="connection_requests" data-id="' + esc(r.id) + '" data-status="declined">Decline</button></div>') + '</article>';
   }).join("");
   const helpCards = queue.needs.map((r) => '<article class="moderation-item"><strong>Blood support request</strong><p>' + esc(r.blood_group) + ' · ' + esc(r.urgency) + ' · ' + esc(r.location) + ' · ' + esc(r.status) + '</p><p>' + esc(r.note || "No note supplied") + '</p><div class="moderation-actions">' + (r.status === "pending" ? '<button class="button button-primary button-small" data-table="blood_requests" data-id="' + esc(r.id) + '" data-status="accepted">Approve</button><button class="button button-outline button-small" data-table="blood_requests" data-id="' + esc(r.id) + '" data-status="declined">Decline</button>' : '<button class="button button-primary button-small" data-table="blood_requests" data-id="' + esc(r.id) + '" data-status="closed">Mark fulfilled / close</button>') + '</div></article>').join("");
-  el.innerHTML = connectionCards + helpCards || '<div class="activity-empty"><p>No pending requests.</p></div>';
+  el.innerHTML = donorCards + connectionCards + helpCards || '<div class="activity-empty"><p>No pending donor registrations or requests.</p></div>';
 }
 async function initializeBackend() {
   if (!isLiveConfigured) return;
@@ -268,12 +275,23 @@ function bindEvents() {
     e.preventDefault();
     if (!state.live) { showToast("Add the Supabase project URL and publishable key to enable sign-in."); return; }
     const email = String(new FormData(e.currentTarget).get("email") || "").trim().toLowerCase(); if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast("Enter a valid email address."); return; }
+    const submitButton = e.currentTarget.querySelector('button[type="submit"]');
     try {
       const { error } = await signInWithEmail(email);
       if (error) throw error;
       document.getElementById("auth-dialog").close();
       showToast("Check your email for the secure sign-in link.");
-    } catch (error) { showToast(error.message || "Could not send the sign-in link."); }
+    } catch (error) {
+      const message = error?.message || "";
+      const wait = message.match(/after (\\d+) seconds?/i);
+      if (wait) {
+        showToast("For security reasons, wait " + wait[1] + " seconds before requesting another sign-in email.");
+      } else if (error?.status === 429 || error?.code === "over_email_send_rate_limit" || error?.code === "over_request_rate_limit") {
+        showToast("Too many sign-in requests. Please wait a moment and try again.");
+      } else {
+        showToast(message || "Could not send the sign-in link.");
+      }
+    }
   });
   document.querySelector("[data-auth]").addEventListener("click", async function () {
     if (!state.live) { showToast("The Aashraya service is temporarily unavailable. Please try again later."); return; }
@@ -286,6 +304,18 @@ function bindEvents() {
     catch (error) { showToast(error.message || "Could not load the coordinator queue."); }
   });
   document.getElementById("coordinator-queue").addEventListener("click", async function (e) {
+    const approvalButton = e.target.closest("[data-donor-approval]");
+    if (approvalButton) {
+      approvalButton.disabled = true;
+      try {
+        await setDonorApproval(approvalButton.dataset.donorId, approvalButton.dataset.donorApproval);
+        await loadCoordinatorQueue();
+        if (state.user) { state.donors = await getDonors(); renderDonors(); }
+        showToast(approvalButton.dataset.donorApproval === "approved" ? "Donor approved and added to the live directory." : "Donor registration rejected.");
+      } catch (error) { showToast(error.message || "Could not update donor approval."); }
+      finally { approvalButton.disabled = false; }
+      return;
+    }
     const deactivateButton = e.target.closest("[data-deactivate]");
     if (deactivateButton) {
       deactivateButton.disabled = true;
