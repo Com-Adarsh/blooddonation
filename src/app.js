@@ -135,8 +135,8 @@ async function loadCoordinatorQueue() {
   const donorCards = (queue.donorApprovals || []).map((d) =>
     '<article class="moderation-item"><strong>Donor registration · ' + esc(d.display_name) + '</strong><p>' +
     esc(d.blood_group) + ' · ' + esc(d.department) + ' · ' + esc(d.study_year) + ' · ' + esc(d.district || "") +
-    ' · ' + esc(d.campus_areas?.name || "") + ' · ' + esc(d.approval_status) + '</p><p>Review the registration details. Private contact data stays restricted until separately requested for coordination.</p>'
-    '<div class="moderation-actions"><button class="button button-primary button-small" data-donor-approval="approved" data-donor-id="' + esc(d.id) + '">Approve donor</button>' +
+    ' · ' + esc(d.campus_areas?.name || "") + ' · ' + esc(d.approval_status) + '</p><p>Review the registration details. Private contact data stays restricted until separately requested for coordination.</p>' +
+    '<div class="moderation-actions"><button class="button button-primary button-small" data-donor-approval="approved" data-donor-id="' + esc(d.id) + '">Approve donor</button>'
     '<button class="button button-outline button-small" data-donor-approval="rejected" data-donor-id="' + esc(d.id) + '">Reject</button></div></article>'
   ).join("");
   const connectionCards = queue.connections.map((r) => {
