@@ -31,8 +31,7 @@ export async function getDonors() {
 export async function registerDonor(profile, phone) {
   const api = client();
   const { data: { user } } = await api.auth.getUser();
-  if (!user?.email) throw new Error("Sign in with your verified CUSAT student email before registering.");
-  const email = String(user.email).trim().toLowerCase();
+  if (!user?.email || !user.email_confirmed_at) throw new Error("Verify your email address before registering as a donor.");
     const { error } = await api.rpc("register_my_donor", {
     p_display_name: profile.name,
     p_blood_group: profile.group,
