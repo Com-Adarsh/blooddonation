@@ -12,6 +12,9 @@ function client() {
 export async function signInWithEmail(email) {
   return client().auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: window.location.origin } });
 }
+export async function signInWithGoogle() {
+  return client().auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } });
+}
 export async function signOut() { return client().auth.signOut(); }
 export function onAuthChange(callback) { return client().auth.onAuthStateChange((_event, session) => callback(session)); }
 export async function getAreas() {
