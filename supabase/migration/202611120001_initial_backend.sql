@@ -52,12 +52,13 @@ create table public.connection_requests (
   note text check (note is null or length(note) <= 180),
   status public.request_status not null default 'pending',
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 create index student_donors_search_idx on public.student_donors (blood_group, campus_area_id) where is_active;
 create index connection_requests_donor_status_created_idx on public.connection_requests (donor_id, status, created_at desc);
 create index connection_requests_requester_created_idx on public.connection_requests (requester_user_id, created_at desc);
+create unique index connection_requests_active_pair_idx on public.connection_requests (donor_id, requester_user_id) where status in ('pending', 'accepted');
 
 create or replace function private.is_coordinator()
 returns boolean
@@ -100,6 +101,7 @@ grant select (id, display_name, blood_group, department, study_year, campus_area
 grant insert (user_id, display_name, blood_group, department, study_year, campus_area_id, availability, consent_at, is_active) on public.student_donors to authenticated;
 grant update (display_name, blood_group, department, study_year, campus_area_id, availability, consent_at, is_active) on public.student_donors to authenticated;
 grant select, insert, update on public.connection_requests to authenticated;
+grant delete on public.student_donors to authenticated;
 grant select, insert, update on private.donor_contacts to authenticated;
 
 create policy "Signed-in students read active areas" on public.campus_areas
@@ -112,6 +114,9 @@ for insert to authenticated with check (user_id = (select auth.uid()) and consen
 create policy "Students update their own donor profile" on public.student_donors
 for update to authenticated using (user_id = (select auth.uid()))
 with check (user_id = (select auth.uid()));
+
+create policy "Students delete their own donor profile" on public.student_donors
+for delete to authenticated using (user_id = (select auth.uid()));
 
 create policy "Owner or coordinator reads private contacts" on private.donor_contacts
 for select to authenticated using (
@@ -147,6 +152,7 @@ on conflict (name) do nothing;
 -- Add coordinator accounts manually after they sign in, using the SQL editor:
 -- insert into private.coordinators (user_id) select id from auth.users where email = 'coordinator@cusat.ac.in';
 -- In Supabase Auth settings, restrict signups to the institution's confirmed email domain.
+
 
 
 
