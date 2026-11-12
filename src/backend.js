@@ -21,12 +21,12 @@ export async function getAreas() {
 }
 export async function getDonors() {
   const { data, error } = await client().from("student_donors")
-    .select("id,display_name,blood_group,department,study_year,campus_area_id,availability,campus_areas(name)")
+    .select("id,display_name,blood_group,department,study_year,campus_area_id,availability,district,campus_areas(name)")
     .eq("is_active", true).order("display_name");
   if (error) throw error;
   return data.map((d) => ({ id: d.id, name: d.display_name, group: d.blood_group, department: d.department,
     year: d.study_year, area: d.campus_areas?.name || "Campus", areaId: d.campus_area_id,
-    availability: d.availability, initials: d.display_name.split(/\s+/).map((p) => p[0]).slice(0, 2).join("").toUpperCase(), tint: "rose", demo: false }));
+    availability: d.availability, district: d.district, initials: d.display_name.split(/\s+/).map((p) => p[0]).slice(0, 2).join("").toUpperCase(), tint: "rose", demo: false }));
 }
 export async function registerDonor(profile, phone) {
   const api = client();
@@ -111,7 +111,7 @@ export async function getDonorContact(donorId) {
   return data?.[0] || null;
 }
 export async function setRequestStatus(table, id, status) {
-  const { error } = await client().from(table).update({ status }).eq("id", id);
+  const { error } = await client().rpc("set_request_status", { p_table: table, p_id: id, p_status: status });
   if (error) throw error;
 }
 
