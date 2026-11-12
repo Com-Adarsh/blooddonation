@@ -31,10 +31,25 @@ export async function getDonors() {
 export async function registerDonor(profile, phone) {
   const api = client();
   const { data: { user } } = await api.auth.getUser();
-  if (!user?.email) throw new Error("Sign in with your verified student email before registering.");
-  const { error } = await api.rpc("register_my_donor", { p_display_name: profile.name, p_blood_group: profile.group,
-    p_department: profile.department, p_study_year: profile.year, p_campus_area_id: profile.areaId,
-    p_availability: profile.availability, p_consent: true, p_phone: phone });
+  if (!user?.email) throw new Error("Sign in with your verified CUSAT student email before registering.");
+  const email = String(user.email).trim().toLowerCase();
+  if (!email.endsWith("@cusat.ac.in")) throw new Error("Only verified @cusat.ac.in student accounts can register as donors.");
+  const { error } = await api.rpc("register_my_donor", {
+    p_display_name: profile.name,
+    p_blood_group: profile.group,
+    p_department: profile.department,
+    p_study_year: profile.year,
+    p_campus_area_id: profile.areaId,
+    p_availability: profile.availability,
+    p_consent: true,
+    p_phone: phone,
+    p_district: profile.district,
+    p_dob: profile.dob,
+    p_weight_kg: profile.weightKg,
+    p_height_cm: profile.heightCm,
+    p_address: profile.address,
+    p_passing_date: profile.passingDate
+  });
   if (error) throw error;
 }
 export async function addConnectionRequest(request) {
@@ -49,8 +64,15 @@ export async function addBloodRequest(request) {
   const api = client();
   const { data: { user } } = await api.auth.getUser();
   if (!user) throw new Error("Sign in before requesting blood support.");
-  const { error } = await api.from("blood_requests").insert({ requester_user_id: user.id,
-    blood_group: request.group, urgency: request.urgency, location: request.location, note: request.note || null });
+  const { error } = await api.from("blood_requests").insert({
+    requester_user_id: user.id,
+    blood_group: request.group,
+    urgency: request.urgency,
+    location: request.location,
+    note: request.note || null,
+    needed_by: request.neededBy || null,
+    district: request.district || null
+  });
   if (error) throw error;
 }
 export async function getMyActivity() {
