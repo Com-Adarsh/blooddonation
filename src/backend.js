@@ -33,8 +33,7 @@ export async function registerDonor(profile, phone) {
   const { data: { user } } = await api.auth.getUser();
   if (!user?.email) throw new Error("Sign in with your verified CUSAT student email before registering.");
   const email = String(user.email).trim().toLowerCase();
-  if (!email.endsWith("@cusat.ac.in")) throw new Error("Only verified @cusat.ac.in student accounts can register as donors.");
-  const { error } = await api.rpc("register_my_donor", {
+    const { error } = await api.rpc("register_my_donor", {
     p_display_name: profile.name,
     p_blood_group: profile.group,
     p_department: profile.department,
@@ -114,6 +113,8 @@ export async function setRequestStatus(table, id, status) {
   const { error } = await client().rpc("set_request_status", { p_table: table, p_id: id, p_status: status });
   if (error) throw error;
 }
+
+export async function setMyDonorActive(active) { const { error } = await client().rpc("set_my_donor_active", { p_active: active }); if (error) throw error; }
 
 export async function deactivateDonor(donorId) {
   const { error } = await client().rpc("deactivate_donor", { p_donor_id: donorId });
