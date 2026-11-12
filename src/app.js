@@ -137,20 +137,13 @@ async function loadLiveData() {
 async function loadCoordinatorQueue() {
   if (!state.coordinator) throw new Error("Coordinator access is required.");
   const queue = await getCoordinatorQueue(), el = document.getElementById("coordinator-queue");
-  const donorCards = (queue.donorApprovals || []).map((d) =>
-    '<article class="moderation-item"><strong>Donor registration · ' + esc(d.display_name) + '</strong><p>' +
-    esc(d.blood_group) + ' · ' + esc(d.department) + ' · ' + esc(d.study_year) + ' · ' + esc(d.district || "") +
-    ' · ' + esc(d.campus_areas?.name || "") + ' · ' + esc(d.approval_status) + '</p><p>Review the registration details. Private contact data stays restricted until separately requested for coordination.</p>' +
-    '<div class="moderation-actions"><button class="button button-primary button-small" data-donor-approval="approved" data-donor-id="' + esc(d.id) + '">Approve donor</button>' +
-    '<button class="button button-outline button-small" data-donor-approval="rejected" data-donor-id="' + esc(d.id) + '">Reject</button></div></article>'
-  ).join("");
-  const connectionCards = queue.connections.map((r) => {
+  const donorCards = "";\n  const connectionCards = queue.connections.map((r) => {
     const d = r.donor || {};
     const approved = r.status === "accepted";
     return '<article class="moderation-item"><strong>Connection request · ' + esc(d.display_name || "Donor") + '</strong><p>' + esc(r.request_blood_group) + ' · ' + esc(r.urgency) + ' · ' + esc(d.department || "") + ' · ' + esc(d.campus_areas?.name || "") + ' · ' + esc(r.status) + '</p><p>' + esc(r.note || "No note supplied") + '</p>' + (approved ? '<button class="button button-outline button-small" data-contact="' + esc(d.id || "") + '">View donor contact</button><button class="button button-outline button-small" data-deactivate="' + esc(d.id || "") + '">Deactivate donor</button><p id="contact-' + esc(d.id || "") + '" class="contact-result" aria-live="polite"></p><div class="moderation-actions"><button class="button button-primary button-small" data-table="connection_requests" data-id="' + esc(r.id) + '" data-status="closed">Mark fulfilled / close</button></div>' : '<div class="moderation-actions"><button class="button button-primary button-small" data-table="connection_requests" data-id="' + esc(r.id) + '" data-status="accepted">Approve</button><button class="button button-outline button-small" data-table="connection_requests" data-id="' + esc(r.id) + '" data-status="declined">Decline</button></div>') + '</article>';
   }).join("");
   const helpCards = queue.needs.map((r) => '<article class="moderation-item"><strong>Blood support request</strong><p>' + esc(r.blood_group) + ' · ' + esc(r.urgency) + ' · ' + esc(r.location) + ' · ' + esc(r.status) + '</p><p>' + esc(r.note || "No note supplied") + '</p><div class="moderation-actions">' + (r.status === "pending" ? '<button class="button button-primary button-small" data-table="blood_requests" data-id="' + esc(r.id) + '" data-status="accepted">Approve</button><button class="button button-outline button-small" data-table="blood_requests" data-id="' + esc(r.id) + '" data-status="declined">Decline</button>' : '<button class="button button-primary button-small" data-table="blood_requests" data-id="' + esc(r.id) + '" data-status="closed">Mark fulfilled / close</button>') + '</div></article>').join("");
-  el.innerHTML = donorCards + connectionCards + helpCards || '<div class="activity-empty"><p>No pending donor registrations or requests.</p></div>';
+  el.innerHTML = connectionCards + helpCards || '<div class="activity-empty"><p>No pending requests.</p></div>';
 }
 async function initializeBackend() {
   if (!isLiveConfigured) return;
@@ -237,7 +230,7 @@ function bindEvents() {
         document.getElementById("area-filter").value = areas[0];
         renderDonors(); addActivity("donor", "Donor registration submitted", String(data.get("group")) + " · " + department);
         f.reset(); document.getElementById("register-dialog").close();
-        showToast("Registration submitted. The Aashraya coordinator must approve your donor profile before it appears in the directory.");
+        showToast("You are now registered as an Aashraya volunteer donor and can appear in the donor directory.");
       } catch (error) { showToast(error.message || "Could not save the donor profile."); }
       return;
     }
