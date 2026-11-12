@@ -15,6 +15,20 @@ export async function signInWithEmail(email) {
 export async function signInWithGoogle() {
   return client().auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } });
 }
+export async function isGoogleProviderEnabled() {
+  if (!url || !key) return false;
+  try {
+    const response = await fetch(url.replace(/\/$/, "") + "/auth/v1/settings", {
+      method: "GET",
+      headers: { apikey: key, Accept: "application/json" }
+    });
+    if (!response.ok) return false;
+    const settings = await response.json();
+    return settings?.external?.google === true;
+  } catch (_) {
+    return false;
+  }
+}
 export async function signOut() { return client().auth.signOut(); }
 export function onAuthChange(callback) { return client().auth.onAuthStateChange((_event, session) => callback(session)); }
 export async function getAreas() {
