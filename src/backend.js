@@ -97,3 +97,4 @@ export async function deactivateDonor(donorId) {
   const { error } = await client().rpc("deactivate_donor", { p_donor_id: donorId });
   if (error) throw error;
 }
+
