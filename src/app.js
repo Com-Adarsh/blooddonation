@@ -1,4 +1,4 @@
-import { isLiveConfigured, signInWithEmail, signOut, onAuthChange, getAreas, getDonors, registerDonor, addConnectionRequest, addBloodRequest, getMyActivity, isCoordinator, getCoordinatorQueue, getDonorContact, setRequestStatus, deactivateDonor, setDonorApproval } from "./backend.js";
+import { isLiveConfigured, signInWithEmail, signInWithGoogle, isGoogleProviderEnabled, signOut, onAuthChange, getAreas, getDonors, registerDonor, addConnectionRequest, addBloodRequest, getMyActivity, isCoordinator, getCoordinatorQueue, getDonorContact, setRequestStatus, deactivateDonor } from "./backend.js";
 const groups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 const districts = ["Thiruvananthapuram","Kollam","Pathanamthitta","Alappuzha","Kottayam","Idukki","Ernakulam","Thrissur","Palakkad","Malappuram","Kozhikode","Wayanad","Kannur","Kasaragod"];
 let areas = ["All campus"];
@@ -23,7 +23,7 @@ function ico(name, size) {
 }
 function badge(g) { return '<span class="blood-badge">' + esc(g) + '</span>'; }
 function card(d) {
-  return '<article class="donor-card"><div class="donor-card-top"><div class="donor-person"><span class="avatar avatar-' + esc(d.tint) + '">' + esc(d.initials) + '</span><div><div class="donor-name-row"><h3>' + esc(d.name) + '</h3>' +  + '</div><p>' + esc(d.department) + ' <span class="dot"></span> ' + esc(d.year) + '</p></div></div>' + badge(d.group) + '</div><div class="donor-meta"><span>' + ico("pin", 15) + esc(d.area) + '</span><span>' + ico("clock", 15) + esc(d.availability) + '</span></div><div class="donor-card-bottom"><span class="privacy-label">' + ico("shield", 14) + ' Contact stays private</span><button class="button button-outline button-small" data-request="' + esc(d.id) + '">Request connection ' + ico("arrow", 15) + '</button></div></article>';
+  return '<article class="donor-card"><div class="donor-card-top"><div class="donor-person"><span class="avatar avatar-' + esc(d.tint) + '">' + esc(d.initials) + '</span><div><div class="donor-name-row"><h3>' + esc(d.name) + '</h3>' + '</div><p>' + esc(d.department) + ' <span class="dot"></span> ' + esc(d.year) + '</p></div></div>' + badge(d.group) + '</div><div class="donor-meta"><span>' + ico("pin", 15) + esc(d.area) + '</span><span>' + ico("clock", 15) + esc(d.availability) + '</span></div><div class="donor-card-bottom"><span class="privacy-label">' + ico("shield", 14) + ' Contact stays private</span><button class="button button-outline button-small" data-request="' + esc(d.id) + '">Request connection ' + ico("arrow", 15) + '</button></div></article>';
 }
 function filtered() {
   const q = state.search.trim().toLowerCase();
@@ -67,6 +67,15 @@ function showToast(message) {
   clearTimeout(showToast.timer);
   showToast.timer = setTimeout(function () { el.classList.remove("toast-visible"); }, 3600);
 }
+function handleAuthRedirectError() {
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  const queryParams = new URLSearchParams(window.location.search);
+  const message = hashParams.get("error_description") || queryParams.get("error_description");
+  if (message) {
+    history.replaceState({}, document.title, window.location.pathname + window.location.search.split("?")[0]);
+    setTimeout(function () { showToast("Authentication failed: " + message); }, 0);
+  }
+}
 function open(id) { document.getElementById(id).showModal(); }
 function render() {
   const chips = ["All"].concat(groups).map(function (g) {
@@ -88,10 +97,10 @@ function render() {
 }
 function renderDialogs() {
   app.insertAdjacentHTML("beforeend",
-  '<dialog class="app-dialog" id="register-dialog" aria-labelledby="register-title"><div class="dialog-head"><div><span class="section-kicker">JOIN THE CAMPUS CIRCLE</span><h2 id="register-title">Register as a donor</h2><p>Share a few details so the CUSAT cell can coordinate in a live service.</p></div><button class="icon-button" aria-label="Close" data-close>' + ico("close", 19) + '</button></div><div class="dialog-demo">' + ico("shield", 15) + ' Contact details are private and used only for donor coordination.</div><form id="register-form" class="dialog-form"><div class="form-grid"><label class="field field-wide">Full name <span>*</span><input name="name" required maxlength="70" placeholder="Your name" autocomplete="name" /></label><label class="field">Phone number <span>*</span><input name="phone" required type="tel" inputmode="tel" maxlength="18" placeholder="+91" autocomplete="tel" /></label><label class="field">CUSAT email <span>*</span><input name="email" required type="email" placeholder="you@cusat.ac.in" autocomplete="email" /></label><label class="field">Blood group <span>*</span><select name="group" required><option value="">Select group</option>' + groups.map(function (g) { return '<option>' + g + '</option>'; }).join("") + '</select></label><label class="field">Department <span>*</span><input name="department" required maxlength="90" placeholder="Your department" /></label><label class="field">Study year <span>*</span><select name="year" required><option value="">Select year</option><option>1st year</option><option>2nd year</option><option>3rd year</option><option>4th year</option><option>Final year</option><option>Postgraduate</option></select></label><label class="field">Campus area <span>*</span><select name="area" id="donor-area" required><option value="">Select area</option><option>CUSAT Main Campus</option><option>Kalamassery</option><option>Hostel area</option><option>School of Engineering</option></select></label><label class="field">District <span>*</span><select name="district" required><option value="">Select district</option><option>Kollam</option><option>Ernakulam</option><option>Alappuzha</option><option>Pathanamthitta</option><option>Kottayam</option><option>Idukki</option><option>Thrissur</option><option>Palakkad</option><option>Malappuram</option><option>Kozhikode</option><option>Wayanad</option><option>Kannur</option><option>Kasaragod</option><option>Thiruvananthapuram</option></select></label><label class="field">Date of birth <span>*</span><input name="dob" required type="date" autocomplete="bday" /></label><label class="field">Weight (kg) <span>*</span><input name="weightKg" required type="number" min="30" max="200" step="0.1" placeholder="e.g. 60" /></label><label class="field">Height (cm) <span>*</span><input name="heightCm" required type="number" min="100" max="230" step="0.1" placeholder="e.g. 170" /></label><label class="field field-wide">Address <span>*</span><input name="address" required maxlength="160" placeholder="Current address" autocomplete="street-address" /></label><label class="field">Expected passing date <span>*</span><input name="passingDate" required type="date" /></label><label class="field field-wide">When are you usually available? <span>*</span><select name="availability" required><option value="">Choose availability</option><option>Weekdays</option><option>Evenings</option><option>Weekends</option><option>Anytime (emergency)</option></select></label></div><label class="consent"><input type="checkbox" name="consent" required /><span>I agree that the CUSAT Blood Donation Cell may use these details to coordinate a donor connection. A medical professional will assess eligibility.</span></label><button class="button button-primary button-full" type="submit">Register as donor ' + ico("arrow", 17) + '</button><p class="form-footnote">Your phone and email are never shown on public donor cards.</p></form></dialog>' +
+  '<dialog class="app-dialog" id="register-dialog" aria-labelledby="register-title"><div class="dialog-head"><div><span class="section-kicker">JOIN THE CAMPUS CIRCLE</span><h2 id="register-title">Register as a donor</h2><p>Share a few details so the CUSAT cell can coordinate in a live service.</p></div><button class="icon-button" aria-label="Close" data-close>' + ico("close", 19) + '</button></div><div class="dialog-demo">' + ico("shield", 15) + ' Anyone with a verified email can register as a volunteer donor. Your profile becomes active immediately after registration.</div><form id="register-form" class="dialog-form"><div class="form-grid"><label class="field field-wide">Full name <span>*</span><input name="name" required maxlength="70" placeholder="Your name" autocomplete="name" /></label><label class="field">Phone number <span>*</span><input name="phone" required type="tel" inputmode="tel" maxlength="18" placeholder="+91" autocomplete="tel" /></label><label class="field">Email <span>*</span><input name="email" required type="email" placeholder="you@gmail.com" autocomplete="email" /></label><label class="field">Blood group <span>*</span><select name="group" required><option value="">Select group</option>' + groups.map(function (g) { return '<option>' + g + '</option>'; }).join("") + '</select></label><label class="field">Department <span>*</span><input name="department" required maxlength="90" placeholder="Your department" /></label><label class="field">Study year <span>*</span><select name="year" required><option value="">Select year</option><option>1st year</option><option>2nd year</option><option>3rd year</option><option>4th year</option><option>Final year</option><option>Postgraduate</option></select></label><label class="field">Campus area <span>*</span><select name="area" id="donor-area" required><option value="">Select area</option><option>CUSAT Main Campus</option><option>Kalamassery</option><option>Hostel area</option><option>School of Engineering</option></select></label><label class="field">District <span>*</span><select name="district" required><option value="">Select district</option><option>Kollam</option><option>Ernakulam</option><option>Alappuzha</option><option>Pathanamthitta</option><option>Kottayam</option><option>Idukki</option><option>Thrissur</option><option>Palakkad</option><option>Malappuram</option><option>Kozhikode</option><option>Wayanad</option><option>Kannur</option><option>Kasaragod</option><option>Thiruvananthapuram</option></select></label><label class="field">Date of birth <span>*</span><input name="dob" required type="date" autocomplete="bday" /></label><label class="field">Weight (kg) <span>*</span><input name="weightKg" required type="number" min="30" max="200" step="0.1" placeholder="e.g. 60" /></label><label class="field">Height (cm) <span>*</span><input name="heightCm" required type="number" min="100" max="230" step="0.1" placeholder="e.g. 170" /></label><label class="field field-wide">Address <span>*</span><input name="address" required maxlength="160" placeholder="Current address" autocomplete="street-address" /></label><label class="field">Expected passing date <span>*</span><input name="passingDate" required type="date" /></label><label class="field field-wide">When are you usually available? <span>*</span><select name="availability" required><option value="">Choose availability</option><option>Weekdays</option><option>Evenings</option><option>Weekends</option><option>Anytime (emergency)</option></select></label></div><label class="consent"><input type="checkbox" name="consent" required /><span>I agree that the CUSAT Blood Donation Cell may use these details to coordinate a donor connection. A medical professional will assess eligibility.</span></label><button class="button button-primary button-full" type="submit">Register as donor ' + ico("arrow", 17) + '</button><p class="form-footnote">Your phone and email are never shown on public donor cards.</p></form></dialog>' +
   '<dialog class="app-dialog compact-dialog" id="request-dialog" aria-labelledby="request-title"><div class="dialog-head"><div><span class="section-kicker">AASHRAYA CONNECTION</span><h2 id="request-title">Request a connection</h2><p>Ask to connect with this student donor.</p></div><button class="icon-button" aria-label="Close" data-close>' + ico("close", 19) + '</button></div><div class="request-person" id="request-person"></div><form id="connection-form" class="dialog-form"><label class="field">A note for the campus cell <span>(optional)</span><textarea name="note" rows="3" maxlength="180" placeholder="Share a little context. Leave out patient names and medical details."></textarea></label><label class="field">How soon? <select name="urgency" required><option>As soon as possible</option><option>Today</option><option>Planned date</option></select></label><div class="dialog-info">' + ico("shield", 17) + '<span>The campus cell reviews each request before coordinating next steps.</span></div><button class="button button-primary button-full" type="submit">Send request ' + ico("arrow", 17) + '</button></form></dialog>' +
   '<dialog class="app-dialog compact-dialog" id="help-dialog" aria-labelledby="help-title"><div class="dialog-head"><div><span class="section-kicker">CAMPUS SUPPORT</span><h2 id="help-title">Need blood support?</h2><p>In a live service, this request would be routed to the CUSAT Blood Donation Cell.</p></div><button class="icon-button" aria-label="Close" data-close>' + ico("close", 19) + '</button></div><form id="help-form" class="dialog-form"><div class="form-grid"><label class="field">Blood group needed <span>*</span><select name="group" required><option value="">Select group</option>' + groups.map(function (g) { return '<option>' + g + '</option>'; }).join("") + '</select></label><label class="field">How soon? <span>*</span><select name="urgency" required><option value="">Choose timing</option><option>As soon as possible</option><option>Today</option><option>Planned date</option></select></label><label class="field">District <span>*</span><select name="district" required><option value="">Select district</option><option>Kollam</option><option>Ernakulam</option><option>Alappuzha</option><option>Pathanamthitta</option><option>Kottayam</option><option>Idukki</option><option>Thrissur</option><option>Palakkad</option><option>Malappuram</option><option>Kozhikode</option><option>Wayanad</option><option>Kannur</option><option>Kasaragod</option><option>Thiruvananthapuram</option></select></label><label class="field">Needed by <span>*</span><input name="neededBy" required type="date" /></label><label class="field field-wide">Campus / hospital area <span>*</span><input name="area" required maxlength="90" placeholder="Where support is needed" /></label><label class="field field-wide">Short context <span>(optional)</span><textarea name="note" rows="3" maxlength="180" placeholder="Do not include patient names or medical records."></textarea></label></div><div class="dialog-info">' + ico("shield", 17) + '<span>For immediate emergencies, contact the hospital or local emergency services directly.</span></div><button class="button button-primary button-full" type="submit">Save request ' + ico("arrow", 17) + '</button></form></dialog>' +
-  '<dialog class="app-dialog compact-dialog" id="auth-dialog" aria-labelledby="auth-title"><div class="dialog-head"><div><span class="section-kicker">STUDENT SIGN IN</span><h2 id="auth-title">Sign in with your email</h2><p>We’ll email you a secure sign-in link.</p></div><button class="icon-button" aria-label="Close" data-close>' + ico("close", 19) + '</button></div><form id="auth-form" class="dialog-form"><label class="field">Email <span>*</span><input name="email" type="email" required autocomplete="email" placeholder="you@gmail.com" /></label><div class="dialog-info">' + ico("shield", 17) + '<span>Use your Gmail or another email address to receive the secure sign-in link. Donor registration still requires a verified CUSAT student email.</span></div><button class="button button-primary button-full" type="submit">Send sign-in link ' + ico("arrow", 17) + '</button></form></dialog>' +
+  '<dialog class="app-dialog compact-dialog" id="auth-dialog" aria-labelledby="auth-title"><div class="dialog-head"><div><span class="section-kicker">AASHRAYA BLOOD CELL</span><h2 id="auth-title">Sign in to Aashraya</h2><p>Use Google for the fastest sign-in, or receive a secure email link.</p></div><button class="icon-button" aria-label="Close" data-close>' + ico("close", 19) + '</button></div><form id="auth-form" class="dialog-form"><button class="button button-primary button-full" id="google-signin" type="button">Continue with Google</button><div class="auth-divider"><span>or</span></div><label class="field">Email <span>*</span><input name="email" type="email" required autocomplete="email" placeholder="you@gmail.com" /></label><div class="dialog-info">' + ico("shield", 17) + '<span>Anyone can create an Aashraya account using a verified email address. Volunteer donor registration is immediate; the campus cell coordinates requests and support.</span></div><button class="button button-primary button-full" type="submit">Send sign-in link ' + ico("arrow", 17) + '</button></form></dialog>' +
   '<dialog class="app-dialog" id="coordinator-dialog" aria-labelledby="coordinator-title"><div class="dialog-head"><div><span class="section-kicker">CAMPUS CELL</span><h2 id="coordinator-title">Coordinator queue</h2><p>Review pending requests. Contact details are logged when viewed.</p></div><button class="icon-button" aria-label="Close" data-close>' + ico("close", 19) + '</button></div><div id="coordinator-queue" class="coordinator-queue"></div></dialog><div class="toast" id="toast" role="status" aria-live="polite"></div>');
 }
 function requestDonor(d) {
@@ -124,28 +133,26 @@ function updateAuthUI() {
   if (heroPrivacy && state.live) heroPrivacy.textContent = "Donor contact details are visible only to the authorized campus cell.";
 }
 async function loadLiveData() {
-  state.donors = state.user ? await getDonors() : [];
-  state.activity = state.user ? await getMyActivity() : [];
-  state.coordinator = state.user ? await isCoordinator() : false;
+  if (!state.user) {
+    state.donors = []; state.activity = []; state.coordinator = false;
+    updateAuthUI(); renderDonors(); renderActivity(); return;
+  }
+  const [donors, activity] = await Promise.all([getDonors(), getMyActivity()]);
+  state.donors = donors; state.activity = activity;
   updateAuthUI(); renderDonors(); renderActivity();
+  try { state.coordinator = await isCoordinator(); updateAuthUI(); }
+  catch (_) { state.coordinator = false; updateAuthUI(); }
 }
 async function loadCoordinatorQueue() {
   if (!state.coordinator) throw new Error("Coordinator access is required.");
   const queue = await getCoordinatorQueue(), el = document.getElementById("coordinator-queue");
-  const donorCards = (queue.donorApprovals || []).map((d) =>
-    '<article class="moderation-item"><strong>New donor registration · ' + esc(d.display_name) + '</strong><p>' +
-    esc(d.blood_group) + ' · ' + esc(d.department) + ' · ' + esc(d.study_year) + ' · ' + esc(d.district || "") +
-    ' · ' + esc(d.campus_areas?.name || "") + '</p><p>Registration is pending coordinator approval. Contact details remain private until approved.</p>' +
-    '<div class="moderation-actions"><button class="button button-primary button-small" data-donor-approval="approved" data-donor-id="' + esc(d.id) + '">Approve donor</button>' +
-    '<button class="button button-outline button-small" data-donor-approval="rejected" data-donor-id="' + esc(d.id) + '">Reject</button></div></article>'
-  ).join("");
   const connectionCards = queue.connections.map((r) => {
     const d = r.donor || {};
     const approved = r.status === "accepted";
     return '<article class="moderation-item"><strong>Connection request · ' + esc(d.display_name || "Donor") + '</strong><p>' + esc(r.request_blood_group) + ' · ' + esc(r.urgency) + ' · ' + esc(d.department || "") + ' · ' + esc(d.campus_areas?.name || "") + ' · ' + esc(r.status) + '</p><p>' + esc(r.note || "No note supplied") + '</p>' + (approved ? '<button class="button button-outline button-small" data-contact="' + esc(d.id || "") + '">View donor contact</button><button class="button button-outline button-small" data-deactivate="' + esc(d.id || "") + '">Deactivate donor</button><p id="contact-' + esc(d.id || "") + '" class="contact-result" aria-live="polite"></p><div class="moderation-actions"><button class="button button-primary button-small" data-table="connection_requests" data-id="' + esc(r.id) + '" data-status="closed">Mark fulfilled / close</button></div>' : '<div class="moderation-actions"><button class="button button-primary button-small" data-table="connection_requests" data-id="' + esc(r.id) + '" data-status="accepted">Approve</button><button class="button button-outline button-small" data-table="connection_requests" data-id="' + esc(r.id) + '" data-status="declined">Decline</button></div>') + '</article>';
   }).join("");
   const helpCards = queue.needs.map((r) => '<article class="moderation-item"><strong>Blood support request</strong><p>' + esc(r.blood_group) + ' · ' + esc(r.urgency) + ' · ' + esc(r.location) + ' · ' + esc(r.status) + '</p><p>' + esc(r.note || "No note supplied") + '</p><div class="moderation-actions">' + (r.status === "pending" ? '<button class="button button-primary button-small" data-table="blood_requests" data-id="' + esc(r.id) + '" data-status="accepted">Approve</button><button class="button button-outline button-small" data-table="blood_requests" data-id="' + esc(r.id) + '" data-status="declined">Decline</button>' : '<button class="button button-primary button-small" data-table="blood_requests" data-id="' + esc(r.id) + '" data-status="closed">Mark fulfilled / close</button>') + '</div></article>').join("");
-  el.innerHTML = donorCards + connectionCards + helpCards || '<div class="activity-empty"><p>No pending donor registrations or requests.</p></div>';
+  el.innerHTML = connectionCards + helpCards || '<div class="activity-empty"><p>No pending requests.</p></div>';
 }
 async function initializeBackend() {
   if (!isLiveConfigured) return;
@@ -218,7 +225,7 @@ function bindEvents() {
       return;
     }
     if (state.live) {
-      if (!state.user) { open("auth-dialog"); showToast("Sign in before registering as a donor."); return; }
+      if (!state.user) { open("auth-dialog"); showToast("Sign in with your verified email before registering as a donor."); return; }
       if (String(data.get("email") || "").toLowerCase() !== String(state.user.email || "").toLowerCase()) {
         showToast("Use the same verified email address you signed in with."); return;
       }
@@ -230,9 +237,9 @@ function bindEvents() {
         state.donors = await getDonors();
         state.group = "All"; state.area = areas[0]; state.search = ""; search.value = "";
         document.getElementById("area-filter").value = areas[0];
-        renderDonors(); addActivity("donor", "Donor registration submitted", String(data.get("group")) + " · " + department);
+        renderDonors(); addActivity("donor", "Donor registration completed", String(data.get("group")) + " · " + department);
         f.reset(); document.getElementById("register-dialog").close();
-        showToast("Registration submitted. The Aashraya coordinator must approve your donor profile before it appears in the directory.");
+        showToast("You are now an active Aashraya volunteer donor and can appear in the donor directory.");
       } catch (error) { showToast(error.message || "Could not save the donor profile."); }
       return;
     }
@@ -271,19 +278,42 @@ function bindEvents() {
     showToast("The live Aashraya service is not configured on this deployment.");
     return;
   });
+  document.getElementById("google-signin").addEventListener("click", async function () {
+    if (!state.live) { showToast("Aashraya sign-in is temporarily unavailable."); return; }
+    const button = this;
+    button.disabled = true;
+    try {
+      const enabled = await isGoogleProviderEnabled();
+      if (enabled !== true) {
+        throw new Error("Google sign-in is not enabled for Aashraya yet. Please use email sign-in, or enable Google under Supabase Authentication → Providers.");
+      }
+      const { error } = await signInWithGoogle();
+      if (error) throw error;
+    } catch (error) {
+      button.disabled = false;
+      showToast(error.message || "Google sign-in is unavailable. Use email sign-in instead.");
+    }
+  });
   document.getElementById("auth-form").addEventListener("submit", async function (e) {
     e.preventDefault();
     if (!state.live) { showToast("Add the Supabase project URL and publishable key to enable sign-in."); return; }
     const email = String(new FormData(e.currentTarget).get("email") || "").trim().toLowerCase(); if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast("Enter a valid email address."); return; }
     const submitButton = e.currentTarget.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
     try {
       const { error } = await signInWithEmail(email);
-      if (error) throw error;
+      if (error) {
+        if (error.status === 429 || error.code === "over_email_send_rate_limit" || /security|after .*seconds|rate limit|too many requests/i.test(error.message || "")) {
+          const wait = (error.message || "").match(/after\s+(\d+)\s+seconds/i);
+          throw new Error(wait ? "For account security, please wait " + wait[1] + " seconds before requesting another sign-in email. Check your inbox and spam folder for the previous link." : "Too many sign-in email requests. Please wait before trying again and check your inbox for the previous link.");
+        }
+        throw error;
+      }
       document.getElementById("auth-dialog").close();
-      showToast("Check your email for the secure sign-in link.");
+      showToast("Check your email for the secure sign-in link. Avoid repeated requests.");
     } catch (error) {
       const message = error?.message || "";
-      const wait = message.match(/after (\\d+) seconds?/i);
+      const wait = message.match(/after (\d+) seconds?/i);
       if (wait) {
         showToast("For security reasons, wait " + wait[1] + " seconds before requesting another sign-in email.");
       } else if (error?.status === 429 || error?.code === "over_email_send_rate_limit" || error?.code === "over_request_rate_limit") {
@@ -291,6 +321,8 @@ function bindEvents() {
       } else {
         showToast(message || "Could not send the sign-in link.");
       }
+    } finally {
+      submitButton.disabled = false;
     }
   });
   document.querySelector("[data-auth]").addEventListener("click", async function () {
@@ -304,18 +336,6 @@ function bindEvents() {
     catch (error) { showToast(error.message || "Could not load the coordinator queue."); }
   });
   document.getElementById("coordinator-queue").addEventListener("click", async function (e) {
-    const approvalButton = e.target.closest("[data-donor-approval]");
-    if (approvalButton) {
-      approvalButton.disabled = true;
-      try {
-        await setDonorApproval(approvalButton.dataset.donorId, approvalButton.dataset.donorApproval);
-        await loadCoordinatorQueue();
-        if (state.user) { state.donors = await getDonors(); renderDonors(); }
-        showToast(approvalButton.dataset.donorApproval === "approved" ? "Donor approved and added to the live directory." : "Donor registration rejected.");
-      } catch (error) { showToast(error.message || "Could not update donor approval."); }
-      finally { approvalButton.disabled = false; }
-      return;
-    }
     const deactivateButton = e.target.closest("[data-deactivate]");
     if (deactivateButton) {
       deactivateButton.disabled = true;
@@ -351,5 +371,6 @@ function bindEvents() {
   });
 }
 render();
+handleAuthRedirectError();
 initializeBackend();
 

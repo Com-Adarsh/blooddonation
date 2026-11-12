@@ -12,6 +12,23 @@ function client() {
 export async function signInWithEmail(email) {
   return client().auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: window.location.origin } });
 }
+export async function signInWithGoogle() {
+  return client().auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } });
+}
+export async function isGoogleProviderEnabled() {
+  if (!url || !key) return false;
+  try {
+    const response = await fetch(url.replace(/\/$/, "") + "/auth/v1/settings", {
+      method: "GET",
+      headers: { apikey: key, Accept: "application/json" }
+    });
+    if (!response.ok) return false;
+    const settings = await response.json();
+    return settings?.external?.google === true;
+  } catch (_) {
+    return false;
+  }
+}
 export async function signOut() { return client().auth.signOut(); }
 export function onAuthChange(callback) { return client().auth.onAuthStateChange((_event, session) => callback(session)); }
 export async function getAreas() {
@@ -22,7 +39,7 @@ export async function getAreas() {
 export async function getDonors() {
   const { data, error } = await client().from("student_donors")
     .select("id,display_name,blood_group,department,study_year,campus_area_id,availability,district,campus_areas(name)")
-    .eq("is_active", true).order("display_name");
+    .eq("is_active", true).eq("approval_status", "approved").order("display_name");
   if (error) throw error;
   return data.map((d) => ({ id: d.id, name: d.display_name, group: d.blood_group, department: d.department,
     year: d.study_year, area: d.campus_areas?.name || "Campus", areaId: d.campus_area_id,
@@ -31,8 +48,7 @@ export async function getDonors() {
 export async function registerDonor(profile, phone) {
   const api = client();
   const { data: { user } } = await api.auth.getUser();
-  if (!user?.email) throw new Error("Sign in with your verified CUSAT student email before registering.");
-  const email = String(user.email).trim().toLowerCase();
+  if (!user?.email || !user.email_confirmed_at) throw new Error("Verify your email address before registering as a donor.");
     const { error } = await api.rpc("register_my_donor", {
     p_display_name: profile.name,
     p_blood_group: profile.group,
@@ -94,27 +110,15 @@ export async function isCoordinator() {
   if (error) throw error;
   return data === true;
 }
-export async function getDonorApprovalQueue() {
-  const { data, error } = await client().from("student_donors")
-    .select("id,display_name,blood_group,department,study_year,district,created_at,approval_status,campus_areas(name)")
-    .eq("approval_status", "pending").order("created_at");
-  if (error) throw error;
-  return data;
-}
-export async function setDonorApproval(donorId, status) {
-  const { error } = await client().rpc("set_donor_approval", { p_donor_id: donorId, p_status: status });
-  if (error) throw error;
-}
 export async function getCoordinatorQueue() {
   const api = client();
-  const [donorApprovals, connections, needs] = await Promise.all([
-    getDonorApprovalQueue(),
+  const [connections, needs] = await Promise.all([
     api.from("connection_requests").select("id,status,created_at,request_blood_group,urgency,note,donor:student_donors(id,display_name,blood_group,department,campus_areas(name))").in("status", ["pending", "accepted"]).order("created_at"),
     api.from("blood_requests").select("id,status,created_at,blood_group,urgency,note,location").in("status", ["pending", "accepted"]).order("created_at")
   ]);
   if (connections.error) throw connections.error;
   if (needs.error) throw needs.error;
-  return { donorApprovals, connections: connections.data, needs: needs.data };
+  return { connections: connections.data, needs: needs.data };
 }
 export async function getDonorContact(donorId) {
   const { data, error } = await client().rpc("coordinator_contact_for_donor", { p_donor_id: donorId });
