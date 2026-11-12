@@ -96,27 +96,15 @@ export async function isCoordinator() {
   if (error) throw error;
   return data === true;
 }
-export async function getDonorApprovalQueue() {
-  const { data, error } = await client().from("student_donors")
-    .select("id,display_name,blood_group,department,study_year,district,created_at,approval_status,campus_areas(name)")
-    .eq("approval_status", "pending").order("created_at");
-  if (error) throw error;
-  return data;
-}
-export async function setDonorApproval(donorId, status) {
-  const { error } = await client().rpc("set_donor_approval", { p_donor_id: donorId, p_status: status });
-  if (error) throw error;
-}
 export async function getCoordinatorQueue() {
   const api = client();
-  const [donorApprovals, connections, needs] = await Promise.all([
-    getDonorApprovalQueue(),
+  const [connections, needs] = await Promise.all([
     api.from("connection_requests").select("id,status,created_at,request_blood_group,urgency,note,donor:student_donors(id,display_name,blood_group,department,campus_areas(name))").in("status", ["pending", "accepted"]).order("created_at"),
     api.from("blood_requests").select("id,status,created_at,blood_group,urgency,note,location").in("status", ["pending", "accepted"]).order("created_at")
   ]);
   if (connections.error) throw connections.error;
   if (needs.error) throw needs.error;
-  return { donorApprovals, connections: connections.data, needs: needs.data };
+  return { connections: connections.data, needs: needs.data };
 }
 export async function getDonorContact(donorId) {
   const { data, error } = await client().rpc("coordinator_contact_for_donor", { p_donor_id: donorId });
