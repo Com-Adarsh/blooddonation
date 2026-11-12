@@ -133,9 +133,9 @@ async function loadCoordinatorQueue() {
   if (!state.coordinator) throw new Error("Coordinator access is required.");
   const queue = await getCoordinatorQueue(), el = document.getElementById("coordinator-queue");
   const donorCards = (queue.donorApprovals || []).map((d) =>
-    '<article class="moderation-item"><strong>New donor registration · ' + esc(d.display_name) + '</strong><p>' +
+    '<article class="moderation-item"><strong>Donor registration · ' + esc(d.display_name) + '</strong><p>' +
     esc(d.blood_group) + ' · ' + esc(d.department) + ' · ' + esc(d.study_year) + ' · ' + esc(d.district || "") +
-    ' · ' + esc(d.campus_areas?.name || "") + '</p><p>Registration is pending coordinator approval. Contact details remain private until approved.</p>' +
+    ' · ' + esc(d.campus_areas?.name || "") + ' · ' + esc(d.approval_status) + '</p><p>Review the registration details. Private contact data stays restricted until separately requested for coordination.</p>'
     '<div class="moderation-actions"><button class="button button-primary button-small" data-donor-approval="approved" data-donor-id="' + esc(d.id) + '">Approve donor</button>' +
     '<button class="button button-outline button-small" data-donor-approval="rejected" data-donor-id="' + esc(d.id) + '">Reject</button></div></article>'
   ).join("");
