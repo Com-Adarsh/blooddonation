@@ -229,15 +229,8 @@ function bindEvents() {
       } catch (error) { showToast(error.message || "Could not save the donor profile."); }
       return;
     }
-    const parts = name.split(/\s+/);
-    const profile = { id: "local-" + Date.now(), name: parts[0] + (parts.length > 1 ? " " + parts.slice(1).map(function (p) { return p[0] + "."; }).join(" ") : ""),
-      group: String(data.get("group")), department, year: String(data.get("year")), area: String(data.get("area")),
-      availability: String(data.get("availability")), initials: parts.map(function (p) { return p[0]; }).join("").slice(0, 2).toUpperCase(), tint: "rose", demo: false };
-    state.donors.unshift(profile); state.group = "All"; state.area = areas[0]; state.search = "";
-    search.value = ""; document.getElementById("area-filter").value = areas[0];
-    renderDonors(); addActivity("donor", "Donor profile added", profile.group + " · " + profile.department);
-    f.reset(); document.getElementById("register-dialog").close();
-    showToast("Added to this preview. Contact details were not saved.");
+    showToast("The live Aashraya service is not configured on this deployment.");
+    return;
   });
   document.getElementById("connection-form").addEventListener("submit", async function (e) {
     e.preventDefault();
@@ -252,9 +245,8 @@ function bindEvents() {
       } catch (error) { showToast(error.message || "Could not save your request."); }
       return;
     }
-    if (d) addActivity("request", "Connection request saved", d.name + " · " + d.group + (note ? " · Note added" : ""));
-    form.reset(); document.getElementById("request-dialog").close();
-    showToast("Saved in this preview only. No message was sent.");
+    showToast("The live Aashraya service is not configured on this deployment.");
+    return;
   });
   document.getElementById("help-form").addEventListener("submit", async function (e) {
     e.preventDefault();
@@ -269,9 +261,8 @@ function bindEvents() {
       } catch (error) { showToast(error.message || "Could not save your request."); }
       return;
     }
-    addActivity("request", "Blood support request saved", data.get("group") + " · " + data.get("urgency") + " · " + data.get("area"));
-    form.reset(); document.getElementById("help-dialog").close();
-    showToast("Saved in this preview only. Contact the hospital for immediate help.");
+    showToast("The live Aashraya service is not configured on this deployment.");
+    return;
   });
   document.getElementById("auth-form").addEventListener("submit", async function (e) {
     e.preventDefault();
