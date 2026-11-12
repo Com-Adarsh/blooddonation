@@ -137,7 +137,7 @@ async function loadLiveData() {
 async function loadCoordinatorQueue() {
   if (!state.coordinator) throw new Error("Coordinator access is required.");
   const queue = await getCoordinatorQueue(), el = document.getElementById("coordinator-queue");
-  const donorCards = "";\n  const connectionCards = queue.connections.map((r) => {
+  const connectionCards = queue.connections.map((r) => {
     const d = r.donor || {};
     const approved = r.status === "accepted";
     return '<article class="moderation-item"><strong>Connection request · ' + esc(d.display_name || "Donor") + '</strong><p>' + esc(r.request_blood_group) + ' · ' + esc(r.urgency) + ' · ' + esc(d.department || "") + ' · ' + esc(d.campus_areas?.name || "") + ' · ' + esc(r.status) + '</p><p>' + esc(r.note || "No note supplied") + '</p>' + (approved ? '<button class="button button-outline button-small" data-contact="' + esc(d.id || "") + '">View donor contact</button><button class="button button-outline button-small" data-deactivate="' + esc(d.id || "") + '">Deactivate donor</button><p id="contact-' + esc(d.id || "") + '" class="contact-result" aria-live="polite"></p><div class="moderation-actions"><button class="button button-primary button-small" data-table="connection_requests" data-id="' + esc(r.id) + '" data-status="closed">Mark fulfilled / close</button></div>' : '<div class="moderation-actions"><button class="button button-primary button-small" data-table="connection_requests" data-id="' + esc(r.id) + '" data-status="accepted">Approve</button><button class="button button-outline button-small" data-table="connection_requests" data-id="' + esc(r.id) + '" data-status="declined">Decline</button></div>') + '</article>';
