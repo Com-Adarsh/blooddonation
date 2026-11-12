@@ -83,13 +83,13 @@ function render() {
   }).join("");
   const options = areas.map(function (a) { return '<option' + (a === state.area ? " selected" : "") + '>' + esc(a) + '</option>'; }).join("");
   app.innerHTML =
-  '<header class="site-header"><div class="header-inner"><a class="brand" href="#top" aria-label="Aashraya home"><span class="brand-mark"><img src="/public/aashraya-logo.jpg" alt="" /></span><span class="brand-copy"><strong>Aashraya</strong><small>CUSAT Blood Donation Cell</small></span></a><button class="mobile-menu" aria-label="Open menu" aria-expanded="false" data-menu>' + ico("menu", 21) + '</button><nav class="site-nav" id="site-nav"><a class="nav-link is-current" href="#discover">Discover</a><a class="nav-link" href="#how-it-works">How it works</a><a class="nav-link activity-link" href="#activity">My activity <span class="nav-count activity-count">0</span></a></nav><button class="button button-primary header-cta" data-open-register>' + ico("plus", 17) + ' Register as donor</button></div></header>' +
+  '<header class="site-header"><div class="header-inner"><a class="brand" href="#top" aria-label="Aashraya home"><span class="brand-mark"><img src="./aashraya-logo.jpg" alt="" /></span><span class="brand-copy"><strong>Aashraya</strong><small>CUSAT Blood Donation Cell</small></span></a><button class="mobile-menu" type="button" aria-label="Open menu" aria-controls="site-nav" aria-expanded="false" data-menu>' + ico("menu", 21) + '</button><nav class="site-nav" id="site-nav"><a class="nav-link is-current" href="#discover">Discover</a><a class="nav-link" href="#how-it-works">How it works</a><a class="nav-link activity-link" href="#activity">My activity <span class="nav-count activity-count">0</span></a></nav><button class="button button-primary header-cta" type="button" data-open-register>' + ico("plus", 17) + ' Register as donor</button></div></header>' +
   '<main id="top"><section class="hero shell"><div class="hero-copy"><span class="eyebrow"><span class="eyebrow-dot"></span> CUSAT students, here for each other</span><h1>When someone needs blood, <em>campus shows up.</em></h1><p class="hero-text">Find a student donor, offer support, and keep help close to home. Aashraya brings the CUSAT community together, one connection at a time.</p><div class="hero-actions"><a class="button button-primary button-large" href="#discover">Find a donor ' + ico("arrow", 18) + '</a><button class="button button-white button-large" data-open-register>' + ico("heart", 18) + ' I can donate</button></div><div class="hero-note">' + ico("shield", 16) + '<span>Donor contact details stay private in this preview.</span></div></div><div class="hero-art" aria-label="A community blood donation illustration"><div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div><div class="art-heart">' + ico("heart", 42) + '</div><span class="art-badge badge-a">A+</span><span class="art-badge badge-o">O−</span><span class="art-badge badge-b">B+</span><div class="art-caption"><span class="caption-icon">' + ico("sparkle", 18) + '</span><div><strong>Small act. Real support.</strong><span>Students helping students</span></div></div></div></section>' +
   '<section class="demo-notice shell" role="note"><span class="notice-icon">' + ico("shield", 17) + '</span><p><strong>Preview mode</strong><span> Sample student profiles are shown. Requests and donor registrations stay in this browser and do not reach the CUSAT Blood Donation Cell.</span></p><button class="notice-close" aria-label="Dismiss preview notice" data-dismiss>' + ico("close", 16) + '</button></section>' +
-  '<section class="discover-section shell" id="discover"><div class="section-heading"><div><span class="section-kicker">THE CUSAT COMMUNITY</span><h2>Find a campus donor</h2><p>Filter by blood group or campus area to find a student who may be able to help.</p></div><button class="text-button" data-open-help>' + ico("plus", 16) + ' Need blood support?</button></div><div class="search-panel"><div class="search-panel-top"><label class="search-box">' + ico("search", 19) + '<span class="sr-only">Search by name or department</span><input id="donor-search" type="search" placeholder="Search by name or department" autocomplete="off" /></label><label class="select-box"><span>' + ico("pin", 18) + '</span><span class="sr-only">Campus area</span><select id="area-filter">' + options + '</select><span class="select-chevron">⌄</span></label></div><div class="filter-row"><span class="filter-label">Blood group</span><div class="filter-chips" role="group" aria-label="Filter by blood group">' + chips + '</div></div></div><div class="results-heading"><div><h3>Available student profiles</h3><span id="result-count" class="result-count"></span></div><span class="sample-key">' + ico("sparkle", 14) + ' Sample data</span></div><div class="donor-grid" id="donor-list"></div></section>' +
+  '<section class="discover-section shell" id="discover"><div class="section-heading"><div><span class="section-kicker">THE CUSAT COMMUNITY</span><h2>Find a campus donor</h2><p>Filter by blood group or campus area to find a student who may be able to help.</p></div><button class="text-button" data-open-help>' + ico("plus", 16) + ' Need blood support?</button></div><div class="search-panel"><div class="search-panel-top"><label class="search-box">' + ico("search", 19) + '<span class="sr-only">Search by name or department</span><input id="donor-search" type="search" placeholder="Search by name or department" autocomplete="off" /></label><label class="select-box"><span>' + ico("pin", 18) + '</span><span class="sr-only">Campus area</span><select id="area-filter">' + options + '</select><span class="select-chevron">⌄</span></label></div><div class="filter-row"><span class="filter-label">Blood group</span><div class="filter-chips" role="group" aria-label="Filter by blood group">' + chips + '</div></div></div><div class="results-heading"><div><h3>Available student profiles</h3><span id="result-count" class="result-count" role="status" aria-live="polite"></span></div><span class="sample-key">' + ico("sparkle", 14) + ' Sample data</span></div><div class="donor-grid" id="donor-list"></div></section>' +
   '<section class="how-section" id="how-it-works"><div class="shell"><div class="section-heading"><div><span class="section-kicker">A SIMPLE WAY TO HELP</span><h2>Three steps. One campus.</h2><p>Designed to make it easier for students to find support and offer it safely.</p></div></div><div class="steps-grid"><article class="step-card"><span class="step-number">01</span><span class="step-icon">' + ico("search", 21) + '</span><h3>Search nearby</h3><p>Choose a blood group and campus area to browse student profiles.</p></article><article class="step-card"><span class="step-number">02</span><span class="step-icon">' + ico("heart", 21) + '</span><h3>Request a connection</h3><p>Ask to connect without publishing a donor’s phone number.</p></article><article class="step-card"><span class="step-number">03</span><span class="step-icon">' + ico("shield", 21) + '</span><h3>Coordinate with care</h3><p>In a live service, the campus cell can coordinate next steps with consent.</p></article></div></div></section>' +
   '<section class="activity-section shell" id="activity"><div class="activity-panel"><div class="activity-title"><div><span class="section-kicker">YOUR SESSION</span><h2>My activity</h2><p>Requests and registrations you create in this preview appear here.</p></div><span class="activity-count-large" id="activity-total">0</span></div><div class="activity-list" id="activity-list"></div></div><aside class="care-note"><span class="care-icon">' + ico("shield", 21) + '</span><h3>Medical decisions stay with professionals</h3><p>Aashraya helps students connect. Donor suitability and care decisions must be assessed by qualified medical staff.</p><button class="text-button" data-open-help>Request blood support ' + ico("arrow", 15) + '</button></aside></section></main>' +
-  '<footer class="site-footer"><div class="shell footer-inner"><a class="brand footer-brand" href="#top"><span class="brand-mark"><img src="/public/aashraya-logo.jpg" alt="" /></span><span class="brand-copy"><strong>Aashraya</strong><small>CUSAT Blood Donation Cell</small></span></a><p>Care travels further when a campus comes together.</p><a href="https://aashraya-cusat.vercel.app/" target="_blank" rel="noreferrer">Aashraya CUSAT ↗</a></div></footer>';
+  '<footer class="site-footer"><div class="shell footer-inner"><a class="brand footer-brand" href="#top"><span class="brand-mark"><img src="./aashraya-logo.jpg" alt="" /></span><span class="brand-copy"><strong>Aashraya</strong><small>CUSAT Blood Donation Cell</small></span></a><p>Care travels further when a campus comes together.</p><a href="https://aashraya-cusat.vercel.app/" target="_blank" rel="noopener noreferrer">Aashraya CUSAT ↗</a></div></footer>';
   renderDialogs();
   renderDonors();
   renderActivity();
@@ -137,22 +137,39 @@ function bindEvents() {
     const nav = document.getElementById("site-nav");
     const on = menu.getAttribute("aria-expanded") === "true";
     menu.setAttribute("aria-expanded", on ? "false" : "true");
+    menu.setAttribute("aria-label", on ? "Open menu" : "Close menu");
     nav.classList.toggle("nav-open", !on);
   });
   document.querySelectorAll(".site-nav a").forEach(function (a) {
     a.addEventListener("click", function () {
       document.getElementById("site-nav").classList.remove("nav-open");
       menu.setAttribute("aria-expanded", "false");
+      menu.setAttribute("aria-label", "Open menu");
     });
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && menu.getAttribute("aria-expanded") === "true") {
+      document.getElementById("site-nav").classList.remove("nav-open");
+      menu.setAttribute("aria-expanded", "false");
+      menu.setAttribute("aria-label", "Open menu");
+    }
   });
   document.getElementById("register-form").addEventListener("submit", function (e) {
     e.preventDefault();
-    const f = e.currentTarget, data = new FormData(f), name = String(data.get("name")).trim();
+    const f = e.currentTarget, data = new FormData(f), name = String(data.get("name") || "").trim();
+    const department = String(data.get("department") || "").trim();
+    if (!name || !department) {
+      const field = f.elements.namedItem(!name ? "name" : "department");
+      field.setCustomValidity(!name ? "Please enter your full name." : "Please enter your department.");
+      field.reportValidity();
+      field.addEventListener("input", function () { field.setCustomValidity(""); }, { once: true });
+      return;
+    }
     const parts = name.split(/\s+/);
     const profile = {
       id: "local-" + Date.now(),
       name: parts[0] + (parts.length > 1 ? " " + parts.slice(1).map(function (p) { return p[0] + "."; }).join(" ") : ""),
-      group: String(data.get("group")), department: String(data.get("department")).trim(),
+      group: String(data.get("group")), department: department,
       year: String(data.get("year")), area: String(data.get("area")),
       availability: String(data.get("availability")),
       initials: parts.map(function (p) { return p[0]; }).join("").slice(0, 2).toUpperCase(),
