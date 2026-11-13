@@ -31,6 +31,11 @@ export async function isGoogleProviderEnabled() {
 }
 export async function signOut() { return client().auth.signOut(); }
 export function onAuthChange(callback) { return client().auth.onAuthStateChange((_event, session) => callback(session)); }
+export async function getCurrentSession() {
+  const { data, error } = await client().auth.getSession();
+  if (error) throw error;
+  return data.session;
+}
 export async function getAreas() {
   const { data, error } = await client().from("campus_areas").select("id,name").eq("active", true).order("name");
   if (error) throw error;
