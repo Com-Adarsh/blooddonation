@@ -181,7 +181,7 @@ async function exportCoordinatorDonors() {
   const headers=["Name","Email","Phone","Blood Group","Department","Study Year","Campus Area","District","Availability","Approval Status","Active","Address","Date of Birth","Weight (kg)","Height (cm)","Expected Passing Date","Consent At","Created At","Updated At"];
   const keys=["name","email","phone","blood_group","department","study_year","campus_area","district","availability","approval_status","active","address","date_of_birth","weight_kg","height_cm","expected_passing_date","consent_at","created_at","updated_at"];
   const lines=[headers.map(csvCell).join(",")].concat(detailed.map(row=>keys.map(k=>csvCell(row[k])).join(",")));
-  const blob=new Blob(["\\uFEFF"+lines.join("\\r\\n")],{type:"text/csv;charset=utf-8"});
+  const blob=new Blob(["\uFEFF" + lines.join("\r\n")], {type:"text/csv;charset=utf-8"});
   const url=URL.createObjectURL(blob), link=document.createElement("a");
   link.href=url; link.download="aashraya-donor-database-"+new Date().toISOString().slice(0,10)+".csv";
   document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
