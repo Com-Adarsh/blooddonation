@@ -115,6 +115,13 @@ export async function isCoordinator() {
   if (error) throw error;
   return data === true;
 }
+export async function getCoordinatorDonors() {
+  const { data, error } = await client().from("student_donors")
+    .select("id,display_name,blood_group,department,study_year,campus_area_id,availability,district,approval_status,is_active,consent_at,created_at,updated_at,campus_areas(name)")
+    .order("display_name");
+  if (error) throw error;
+  return data || [];
+}
 export async function getCoordinatorQueue() {
   const api = client();
   const [connections, needs] = await Promise.all([
