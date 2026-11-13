@@ -1,4 +1,3 @@
-import { initAashrayaMotion } from "./motion.js";
 import { isLiveConfigured, signInWithEmail, signInWithGoogle, isGoogleProviderEnabled, signOut, onAuthChange, getAreas, getDonors, registerDonor, addConnectionRequest, addBloodRequest, getMyActivity, isCoordinator, getCoordinatorQueue, getDonorContact, setRequestStatus, deactivateDonor } from "./backend.js";
 const groups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 const districts = ["Thiruvananthapuram","Kollam","Pathanamthitta","Alappuzha","Kottayam","Idukki","Ernakulam","Thrissur","Palakkad","Malappuram","Kozhikode","Wayanad","Kannur","Kasaragod"];
@@ -381,5 +380,5 @@ function bindEvents() {
 render();
 handleAuthRedirectError();
 initializeBackend();
-initAashrayaMotion();
+requestAnimationFrame(() => import("./motion.js").then(({ initAashrayaMotion }) => initAashrayaMotion()).catch((error) => console.warn("Aashraya motion layer unavailable:", error)));
 
