@@ -234,12 +234,19 @@ function bindEvents() {
       const parts = name.split(/\s+/), publicName = parts[0] + (parts.length > 1 ? " " + parts[parts.length - 1][0] + "." : "");
       try {
         await registerDonor({ name: publicName, group: String(data.get("group")), department, year: String(data.get("year")), areaId: area.id, availability: String(data.get("availability")), district: String(data.get("district")), dob: String(data.get("dob")), weightKg: Number(data.get("weightKg")), heightCm: Number(data.get("heightCm")), address: String(data.get("address")).trim(), passingDate: String(data.get("passingDate")) }, String(data.get("phone") || "").trim());
-        state.donors = await getDonors();
-        state.group = "All"; state.area = areas[0]; state.search = ""; search.value = "";
-        document.getElementById("area-filter").value = areas[0];
-        renderDonors(); addActivity("donor", "Donor registration completed", String(data.get("group")) + " · " + department);
+        // The registration RPC is the source of truth. Do not make the user wait for a
+        // secondary directory refresh before closing the form and confirming success.
         f.reset(); document.getElementById("register-dialog").close();
+        addActivity("donor", "Donor registration completed", String(data.get("group")) + " · " + department);
         showToast("You are now an active Aashraya volunteer donor and can appear in the donor directory.");
+        try {
+          state.donors = await getDonors();
+          state.group = "All"; state.area = areas[0]; state.search = ""; search.value = "";
+          document.getElementById("area-filter").value = areas[0];
+          renderDonors();
+        } catch (refreshError) {
+          console.warn("Donor registration succeeded, but directory refresh failed:", refreshError);
+        }
       } catch (error) { showToast(error.message || "Could not save the donor profile."); }
       return;
     }
