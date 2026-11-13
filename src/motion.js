@@ -65,6 +65,17 @@ function injectStorySections() {
   );
 }
 
+function injectEcg() {
+  const art = document.querySelector(".hero-art");
+  if (!art || art.querySelector(".hero-ecg")) return;
+  art.insertAdjacentHTML("beforeend",
+    '<svg class="hero-ecg" aria-hidden="true" viewBox="0 0 420 90" preserveAspectRatio="none">' +
+      '<path class="ecg-track" d="M0 46 H105 L126 46 L139 20 L153 70 L168 42 H214 L230 42 L242 12 L257 78 L270 46 H420"/>' +
+      '<path class="ecg-line" d="M0 46 H105 L126 46 L139 20 L153 70 L168 42 H214 L230 42 L242 12 L257 78 L270 46 H420"/>' +
+    '</svg>'
+  );
+}
+
 function splitHeadline() {
   const heading = document.querySelector(".hero h1");
   if (!heading || heading.dataset.splitDone) return;
@@ -172,6 +183,7 @@ function initMotion() {
   injectBloodstream();
   injectStorySections();
   splitHeadline();
+  injectEcg();
   initThemeToggle();
   initGlassCards();
   initMagneticButtons();
@@ -182,7 +194,7 @@ function initMotion() {
     return;
   }
 
-  lenisInstance = new Lenis({ duration: 1.05, smoothWheel: true, anchors: true, autoRaf: false });
+  lenisInstance = new Lenis({ duration: 1.05, smoothWheel: true, anchors: true, allowNestedScroll: true, autoRaf: false });
   lenisInstance.on("scroll", ScrollTrigger.update);
   gsap.ticker.add((time) => lenisInstance?.raf(time * 1000));
   gsap.ticker.lagSmoothing(0);
@@ -278,6 +290,18 @@ function initMotion() {
       document.documentElement.style.setProperty("--pointer-x", pointer.x.toFixed(3));
       document.documentElement.style.setProperty("--pointer-y", pointer.y.toFixed(3));
     }, { passive: true });
+  }
+
+  const donorList = document.getElementById("donor-list");
+  if (donorList) {
+    new MutationObserver(() => {
+      initGlassCards();
+      if (!reducedMotion()) {
+        donorList.querySelectorAll(".donor-card").forEach((card) => {
+          gsap.fromTo(card, { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: "power2.out" });
+        });
+      }
+    }).observe(donorList, { childList: true });
   }
 
   ScrollTrigger.refresh();
