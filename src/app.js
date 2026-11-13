@@ -1,4 +1,4 @@
-import { isLiveConfigured, signInWithEmail, signInWithGoogle, isGoogleProviderEnabled, signOut, onAuthChange, getAreas, getDonors, registerDonor, addConnectionRequest, addBloodRequest, getMyActivity, isCoordinator, getCoordinatorQueue, getDonorContact, setRequestStatus, deactivateDonor } from "./backend.js";
+import { isLiveConfigured, signInWithEmail, signInWithGoogle, isGoogleProviderEnabled, signOut, onAuthChange, getCurrentSession, getAreas, getDonors, registerDonor, addConnectionRequest, addBloodRequest, getMyActivity, isCoordinator, getCoordinatorQueue, getDonorContact, setRequestStatus, deactivateDonor } from "./backend.js";
 const groups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 const districts = ["Thiruvananthapuram","Kollam","Pathanamthitta","Alappuzha","Kottayam","Idukki","Ernakulam","Thrissur","Palakkad","Malappuram","Kozhikode","Wayanad","Kannur","Kasaragod"];
 let areas = ["All campus"];
@@ -137,11 +137,34 @@ async function loadLiveData() {
     state.donors = []; state.activity = []; state.coordinator = false;
     updateAuthUI(); renderDonors(); renderActivity(); return;
   }
-  const [donors, activity] = await Promise.all([getDonors(), getMyActivity()]);
-  state.donors = donors; state.activity = activity;
-  updateAuthUI(); renderDonors(); renderActivity();
-  try { state.coordinator = await isCoordinator(); updateAuthUI(); }
-  catch (_) { state.coordinator = false; updateAuthUI(); }
+
+  // Do not let a failure in the private activity queries hide the public-facing
+  // donor directory. Donor discovery and activity are independent surfaces.
+  try {
+    state.donors = await getDonors();
+    renderDonors();
+  } catch (error) {
+    state.donors = [];
+    renderDonors();
+    showToast(error.message || "Could not load the donor directory.");
+  }
+
+  try {
+    state.activity = await getMyActivity();
+  } catch (error) {
+    state.activity = [];
+    showToast("Your sign-in is active, but your activity could not be loaded. Donor discovery is still available.");
+  }
+
+  renderActivity();
+  updateAuthUI();
+
+  try {
+    state.coordinator = await isCoordinator();
+  } catch (_) {
+    state.coordinator = false;
+  }
+  updateAuthUI();
 }
 async function loadCoordinatorQueue() {
   if (!state.coordinator) throw new Error("Coordinator access is required.");
@@ -158,13 +181,38 @@ async function initializeBackend() {
   if (!isLiveConfigured) return;
   state.live = true; state.donors = []; state.activity = [];
   updateAuthUI(); renderDonors(); renderActivity();
+
   try { areaRows = await getAreas(); setAreaChoices(); renderDonors(); }
   catch (error) { showToast(error.message || "Could not load campus areas."); }
-  onAuthChange((session) => { setTimeout(async () => {
+
+  let sessionLoad = Promise.resolve();
+  const applySession = async (session) => {
     state.user = session?.user || null;
-    try { await loadLiveData(); }
-    catch (error) { state.donors = []; state.activity = []; updateAuthUI(); renderDonors(); renderActivity(); showToast(error.message || "Could not load your account data."); }
-  }, 0); });
+    await loadLiveData();
+  };
+
+  onAuthChange((session) => {
+    sessionLoad = sessionLoad.then(() => applySession(session)).catch((error) => {
+      state.user = null;
+      state.donors = [];
+      state.activity = [];
+      state.coordinator = false;
+      updateAuthUI();
+      renderDonors();
+      renderActivity();
+      showToast(error.message || "Could not restore your sign-in session.");
+    });
+  });
+
+  // Explicitly restore an existing session as well as listening for future
+  // auth events. This avoids a race where a returning user has a valid session
+  // but the directory is rendered before INITIAL_SESSION is processed.
+  try {
+    const session = await getCurrentSession();
+    if (session) await applySession(session);
+  } catch (error) {
+    showToast(error.message || "Could not restore your sign-in session.");
+  }
 }
 function bindEvents() {
   document.querySelectorAll("[data-open-register]").forEach(function (b) { b.addEventListener("click", function () { open("register-dialog"); }); });
