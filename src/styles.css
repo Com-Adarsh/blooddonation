@@ -752,3 +752,114 @@ html[data-theme="light"] .toast { background:#202023; border-color:rgba(255,255,
   .coordinator-toolbar { align-items:stretch; flex-direction:column; }
   .coordinator-toolbar .button { width:100%; }
 }
+
+
+/* Final header/menu treatment — RedDot-inspired Aashraya red + white */
+.site-header {
+  background:rgba(255,255,255,.94);
+  border-color:#eadfe1;
+  box-shadow:0 10px 34px rgba(23,23,25,.08),inset 0 1px 0 rgba(255,255,255,.95);
+}
+.brand-copy strong { color:#171719; }
+.brand-copy small { color:#737478; }
+.brand-mark { background:#c8101e; box-shadow:0 8px 24px rgba(200,16,30,.20); }
+.nav-link { color:#626368; }
+.nav-link:hover,.nav-link.is-current { color:#c8101e; background:#fff0f1; }
+.nav-count { color:#c8101e; background:#fff0f1; }
+.theme-toggle {
+  color:#c8101e;
+  background:#fff;
+  border-color:#efc7cb;
+}
+.theme-toggle:hover { background:#fff0f1; }
+.header-actions .button-outline {
+  color:#c8101e;
+  background:#fff;
+  border-color:#efc7cb;
+}
+.header-actions .button-outline:hover { background:#fff0f1; }
+.header-actions .button-primary {
+  background:linear-gradient(135deg,#c8101e,#e21a2d);
+  box-shadow:0 9px 25px rgba(200,16,30,.22);
+}
+.header-actions .button-primary:hover {
+  background:linear-gradient(135deg,#a90916,#c8101e);
+}
+.mobile-menu {
+  color:#c8101e;
+  background:#fff0f1;
+  border:1px solid #f1cdd1;
+  box-shadow:0 5px 14px rgba(200,16,30,.08);
+}
+.mobile-menu:hover,.mobile-menu[aria-expanded="true"] {
+  color:#fff;
+  background:#c8101e;
+  border-color:#c8101e;
+}
+.nav-help { color:inherit; }
+
+/* Mobile menu: clean white sheet with the same red accent system */
+@media (max-width:900px) {
+  .site-header { background:rgba(255,255,255,.96); }
+  .site-nav {
+    background:#fff !important;
+    border:1px solid #eadfe1 !important;
+    box-shadow:0 18px 42px rgba(35,20,24,.14) !important;
+    padding:8px !important;
+  }
+  .site-nav .nav-link {
+    color:#27272a;
+    background:transparent;
+    border-radius:12px;
+    min-height:46px;
+    padding:12px 14px;
+  }
+  .site-nav .nav-link:hover,
+  .site-nav .nav-link.is-current {
+    color:#c8101e;
+    background:#fff0f1;
+  }
+  .site-nav .nav-count {
+    color:#c8101e;
+    background:#ffe5e8;
+  }
+  .site-nav .nav-help {
+    justify-content:flex-start;
+    width:100%;
+  }
+  .site-nav .nav-help svg { color:#c8101e; }
+}
+
+@media (max-width:640px) {
+  .site-header {
+    background:rgba(255,255,255,.97);
+    border-color:#eadfe1;
+  }
+  .mobile-menu {
+    width:42px;
+    height:42px;
+    border-radius:13px;
+  }
+  .header-actions { gap:7px; }
+  .header-actions .theme-toggle {
+    width:40px;
+    height:40px;
+  }
+  .header-actions .button-outline {
+    border-color:#e8bfc4;
+    color:#b70d1b;
+    background:#fff;
+  }
+  .header-actions .header-cta {
+    background:linear-gradient(145deg,#c8101e,#e21a2d);
+    color:#fff;
+    border-color:#c8101e;
+    box-shadow:0 8px 20px rgba(200,16,30,.24);
+  }
+}
+
+html:not([data-theme="light"]) .site-header {
+  background:rgba(255,255,255,.94);
+}
+html:not([data-theme="light"]) .brand-copy strong { color:#171719; }
+html:not([data-theme="light"]) .brand-copy small { color:#737478; }
