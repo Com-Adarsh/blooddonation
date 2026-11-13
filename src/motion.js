@@ -105,7 +105,9 @@ function initThemeToggle() {
   if (!button || button.dataset.bound) return;
   button.dataset.bound = "true";
   const stored = localStorage.getItem("aashraya-theme");
-  if (stored === "light") document.documentElement.dataset.theme = "light";
+  // Aashraya now opens in the calmer ivory/charcoal theme by default.
+  // The darker wine treatment remains available through the theme toggle.
+  document.documentElement.dataset.theme = stored === "dark" ? "dark" : "light";
   const sync = () => {
     const light = document.documentElement.dataset.theme === "light";
     button.setAttribute("aria-pressed", String(light));
