@@ -494,3 +494,84 @@ html[data-theme="light"] .toast { background:#2f2529; border-color:rgba(255,255,
   html[data-theme="light"] .pulse-stat,
   html[data-theme="light"] .faq-item { backdrop-filter:blur(10px) saturate(125%); }
 }
+
+
+/* Getting-started Help menu */
+.nav-help {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  border:0;
+  cursor:pointer;
+  font:inherit;
+}
+.nav-help svg { flex:none; }
+
+.guide-dialog { max-width:760px; }
+.guide-intro {
+  display:flex;
+  gap:12px;
+  align-items:flex-start;
+  padding:16px 18px;
+  margin:4px 0 20px;
+  border-radius:20px;
+  background:rgba(143,24,48,.07);
+  border:1px solid rgba(143,24,48,.12);
+  color:#8f1830;
+}
+.guide-intro strong { display:block; color:inherit; font-family:var(--font-display); }
+.guide-intro span { display:block; margin-top:3px; color:#74696d; font-size:14px; line-height:1.55; }
+.guide-steps { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.guide-step {
+  display:grid;
+  grid-template-columns:auto auto 1fr;
+  gap:10px;
+  align-items:start;
+  padding:18px;
+  border-radius:22px;
+  background:rgba(143,24,48,.035);
+  border:1px solid rgba(50,36,40,.09);
+}
+.guide-step-number {
+  font:800 12px/1 var(--font-display);
+  color:#a96a76;
+  padding-top:4px;
+}
+.guide-step-icon {
+  width:34px;
+  height:34px;
+  display:grid;
+  place-items:center;
+  border-radius:12px;
+  background:#f8e8eb;
+  color:#8f1830;
+  font-weight:700;
+}
+.guide-step h3 { margin:1px 0 5px; color:#2b2226; font:700 15px/1.25 var(--font-display); }
+.guide-step p { margin:0; color:#74696d; font-size:13px; line-height:1.6; }
+.guide-step p strong { color:#8f1830; }
+.guide-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:20px; }
+.guide-footnote { text-align:center; margin-top:14px; }
+
+html:not([data-theme="light"]) .guide-intro {
+  background:rgba(255,143,163,.08);
+  border-color:rgba(255,143,163,.16);
+  color:#ffb4c1;
+}
+html:not([data-theme="light"]) .guide-intro span,
+html:not([data-theme="light"]) .guide-step p { color:rgba(255,244,241,.66); }
+html:not([data-theme="light"]) .guide-step {
+  background:rgba(255,255,255,.045);
+  border-color:rgba(255,255,255,.12);
+}
+html:not([data-theme="light"]) .guide-step h3 { color:#fff; }
+html:not([data-theme="light"]) .guide-step-icon { background:rgba(255,143,163,.10); color:#ffb4c1; }
+html:not([data-theme="light"]) .guide-step p strong { color:#ffb4c1; }
+
+@media (max-width:640px) {
+  .guide-dialog { width:min(94vw,760px); }
+  .guide-steps { grid-template-columns:1fr; }
+  .guide-step { grid-template-columns:auto auto 1fr; }
+  .guide-actions .button { width:100%; }
+}
